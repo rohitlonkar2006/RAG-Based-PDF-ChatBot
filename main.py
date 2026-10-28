@@ -8,7 +8,11 @@ prompt = st.chat_input(
     file_type = ["pdf"]
 )
 
-
-    
+if __name__ == "__main__":
+    if prompt:
+        pdf = prompt.pdf
+        docs = PyPDFLoader(pdf)
+        st.write(docs.load())
+        
         
     
