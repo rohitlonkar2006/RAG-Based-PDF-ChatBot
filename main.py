@@ -13,6 +13,3 @@ if __name__ == "__main__":
         pdf = prompt.pdf
         docs = PyPDFLoader(pdf)
         st.write(docs.load())
-        
-        
-    
