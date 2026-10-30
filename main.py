@@ -11,5 +11,6 @@ prompt = st.chat_input(
 if __name__ == "__main__":
     if prompt:
         pdf = prompt.pdf
-        docs = PyPDFLoader(pdf)
-        st.write(docs.load())
+        loader = PyPDFLoader(pdf)
+        docs = loader.load()
+        st.write(docs)
