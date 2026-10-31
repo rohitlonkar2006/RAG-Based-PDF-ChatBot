@@ -15,4 +15,5 @@ dependencies = [
     "langchain-openai>=1.7.3",
     "pypdf>=6.21.3",
     "sentence-transformers>=6.2.0",
+    "streamlit>=1.66.1",
 ]

@@ -1,5 +1,6 @@
 import os
 import sys
+import uuid
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
@@ -28,21 +29,43 @@ def embed_pdf(pdf):
     print(">> Splitting Successful")
 
     # Embed The Chunks
-    print(">> Embedding...")
+    print(">> Loading Embedding Model")
     pdf_embedding = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
-    print(">> Embedding Successful")
+    print(">> Embedding Model Loaded")
 
-    # Load Into VectorDB
-    print(">> Loading Into VectorStore")
-    persist_directory = os.path.join(PROJECT_ROOT, "embedding", "VectorDB")
-
-    chroma_store = Chroma.from_documents(
-        documents=chunks,
-        embedding=pdf_embedding,
-        persist_directory=persist_directory
+    # Vector Database
+    persist_directory = os.path.join(
+        PROJECT_ROOT, "embedding", "VectorDB"
     )
-    print(">> Loaded Into VectorStore")
+
+    if os.path.exists(persist_directory) and os.listdir(persist_directory):
+        print(">> Existing VectorStore Found")
+
+        chroma_store = Chroma(
+            persist_directory=persist_directory,
+            embedding_function=pdf_embedding
+        )
+
+        # Add new chunks to the existing VectorStore
+        chroma_store.add_documents(
+            documents=chunks,
+            ids=[str(uuid.uuid4()) for _ in chunks]
+        )
+
+        print(">> New Chunks Added To Existing VectorStore")
+
+    else:
+        print(">> Creating New VectorStore")
+
+        chroma_store = Chroma.from_documents(
+            documents=chunks,
+            embedding=pdf_embedding,
+            ids=[str(uuid.uuid4()) for _ in chunks],
+            persist_directory=persist_directory
+        )
+
+        print(">> New VectorStore Created")
 
     return chroma_store
