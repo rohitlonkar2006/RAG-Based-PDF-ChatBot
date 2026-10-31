@@ -13,4 +13,4 @@ if __name__ == "__main__":
         pdf = prompt.pdf
         loader = PyPDFLoader(pdf)
         docs = loader.load()
-        st.write(docs)
+        print(docs)

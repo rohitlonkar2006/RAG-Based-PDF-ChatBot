@@ -5,3 +5,4 @@ langchain_core
 sentence-transformers
 chromadb
 pypdf
+langchain_openai
