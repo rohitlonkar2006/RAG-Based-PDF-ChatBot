@@ -1,22 +1,41 @@
 import os
 import sys
+import tempfile
 import uuid
+from pathlib import Path
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
-from agent.llm_pick import pick_llm
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
+from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
+from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 
-def embed_pdf(pdf):
+def _load_pdf_documents(pdf: UploadedFile | str | Path) -> tuple[list[Document], str]:
+    if isinstance(pdf, UploadedFile):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pdf_path = Path(temp_dir) / "uploaded.pdf"
+            pdf_path.write_bytes(pdf.getvalue())
+            docs = PyPDFLoader(pdf_path).load()
+        source_name = Path(pdf.name).name
+    else:
+        pdf_path = Path(pdf)
+        docs = PyPDFLoader(pdf_path).load()
+        source_name = pdf_path.name
+
+    for doc in docs:
+        doc.metadata["source"] = source_name
+    return docs, source_name
+
+
+def embed_pdf(pdf: UploadedFile | str | Path) -> Chroma:
     # Data Ingestion
     print(">> Data Loading")
-    loader = PyPDFLoader(pdf)
-    docs = loader.load()
+    docs, _ = _load_pdf_documents(pdf)
     print(">> Data Loaded")
 
     # Split Into Chunks
