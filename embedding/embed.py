@@ -3,6 +3,7 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
+from typing import Protocol
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
@@ -12,27 +13,32 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
-from streamlit.runtime.uploaded_file_manager import UploadedFile
 
 
-def _load_pdf_documents(pdf: UploadedFile | str | Path) -> tuple[list[Document], str]:
-    if isinstance(pdf, UploadedFile):
+class PDFUpload(Protocol):
+    name: str
+
+    def getvalue(self) -> bytes: ...
+
+
+def _load_pdf_documents(pdf: PDFUpload | str | Path) -> tuple[list[Document], str]:
+    if isinstance(pdf, (str, os.PathLike)):
+        pdf_path = Path(pdf)
+        docs = PyPDFLoader(pdf_path).load()
+        source_name = pdf_path.name
+    else:
         with tempfile.TemporaryDirectory() as temp_dir:
             pdf_path = Path(temp_dir) / "uploaded.pdf"
             pdf_path.write_bytes(pdf.getvalue())
             docs = PyPDFLoader(pdf_path).load()
         source_name = Path(pdf.name).name
-    else:
-        pdf_path = Path(pdf)
-        docs = PyPDFLoader(pdf_path).load()
-        source_name = pdf_path.name
 
     for doc in docs:
         doc.metadata["source"] = source_name
     return docs, source_name
 
 
-def embed_pdf(pdf: UploadedFile | str | Path) -> Chroma:
+def embed_pdf(pdf: PDFUpload | str | Path) -> Chroma:
     # Data Ingestion
     print(">> Data Loading")
     docs, _ = _load_pdf_documents(pdf)

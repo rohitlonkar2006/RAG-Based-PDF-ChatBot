@@ -1,3 +1,5 @@
+import tempfile
+from pathlib import Path
 from typing import Literal, TypedDict, cast
 
 import streamlit as st
@@ -153,7 +155,10 @@ with st.sidebar:
     ):
         with st.spinner("Reading and indexing your PDFs…"):
             for pdf in uploaded_pdfs:
-                vectorstore = embed_pdf(pdf)
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    pdf_path = Path(temp_dir) / Path(pdf.name).name
+                    pdf_path.write_bytes(pdf.getvalue())
+                    vectorstore = embed_pdf(pdf_path)
                 st.session_state.vectorstore = vectorstore
                 if pdf.name not in indexed_files:
                     indexed_files.append(pdf.name)
